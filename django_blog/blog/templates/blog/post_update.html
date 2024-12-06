@@ -1,0 +1,10 @@
+{% extends 'blog/base.html'%} {% block title%} update blog {% endblock %}
+{% load static %}
+{% block content %}
+<h1>update your blog </h1>
+<form method='post'>
+    {% csrf_token %}
+    {{form}}
+    <button type = "submit">update</button>
+    </form>
+{% endblock %}

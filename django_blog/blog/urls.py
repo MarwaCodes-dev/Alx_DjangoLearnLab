@@ -1,11 +1,15 @@
 from django.urls import path
 from . import views
+from .views import DetailView , CreateView , ListView
 urlpatterns = [
     path('', views.home , name='home'),
-    #path('posts/',views.posts , name='posts'),
-    path('profile/',views.profile , name='profile'),
-    path('login/',views.login_view , name ='login'),
-    path('logout/' , views.logout_view , name ='logout'),
-    path('register/',views.register , name='register'),
-    
+    path('profile/', views.profile , name='profile'),
+    path('blogs/', ListView.as_view(), name='blog'),
+    path('post_list/<int:pk>/', DetailView.as_view(), name='post_detail'),
+    path('post/new/', CreateView.as_view(), name='post_create'),
+    path('post/update/<int:pk>/', views.PostUpdateView.as_view(), name ='post_update'),
+    path('login/', views.login_view , name='login'),
+    path('logout/', views.logout_view , name='logout'),
+    path('register/', views.register , name='register'),
+    path('post/<int:pk>/delete/', views.PostDeleteView.as_view(), name='post_delete'),
 ]
