@@ -1,50 +1,36 @@
 from rest_framework import serializers
-from .models import User 
-from rest_framework.authtoken.models import Token
 from django.contrib.auth import get_user_model
-from django.contrib.auth import authenticate
+from rest_framework.authtoken.models import Token
 
-class UserSerializer(serializers.ModelSerializer):
-    password = serializers.CharField(write_only=True)
+
+
+class CustomUserSerializer(serializers.ModelSerializer):
+    #bio = serializers.CharField()
     class Meta:
         model = get_user_model()
-        fields = ['id', 'username', 'email','password', 'bio', 'profile_picture', 'followers', 'groups', 'user_permissions']
-        
+        fields = ['id', 'username', 'password', 'email', 'bio', 'profile_picture']
+        extra_kwargs = {'password': {'write_only': True}}
+
+    
+    def validate_username(self, value):
+        if get_user_model().objects.filter(username=value).exists():
+            raise serializers.ValidationError("Username is already taken.")
+        return value
+    
     def create(self, validated_data):
+        # Ensure 'email' and 'bio' are handled correctly
+        email = validated_data.get('email')
+        bio = validated_data.get('bio', '')  # Default to empty string if bio is not provided
+
+        if not email:
+            raise serializers.ValidationError("Email is required.")
+
         user = get_user_model().objects.create_user(
             username=validated_data['username'],
             password=validated_data['password'],
-            email=validated_data.get('email', ''),
-            bio=validated_data.get('bio', ''),
+            email=email,
+            bio=bio,
             profile_picture=validated_data.get('profile_picture', None),
         )
+        Token.objects.create(user=user)
         return user
-    
-class UserLoginSerializer(serializers.Serializer):
-    username = serializers.CharField()
-    password = serializers.CharField(write_only=True)
-    token = serializers.CharField(read_only=True)
-
-    def validate(self, data):
-        username = data.get('username')
-        password = data.get('password')
-
-        user = authenticate(username=username, password=password)
-        if not user:
-            raise serializers.ValidationError("Invalid username or password")
-
-        # Retrieve or create token for the user
-        token, created = Token.objects.create(user=user)
-        return {'username': user.username, 'token': token.key}
-
-class TokenSerializer(serializers.ModelSerializer):
-    username = serializers.CharField(source='user.username', read_only=True)
-    email = serializers.EmailField(source='user.email', read_only=True)
-    profile_picture = serializers.ImageField(source='user.profile_picture', read_only=True)
-    bio = serializers.CharField(source='user.bio', read_only=True)
-
-    class Meta:
-        model = Token
-        fields = ['key', 'username', 'email', 'profile_picture', 'bio']
-        fields = ['key']
-            
